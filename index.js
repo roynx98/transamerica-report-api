@@ -8,14 +8,14 @@ const isProduction = environment === "production";
 
 app.use(bodyParser.json());
 
-const browser = await puppeteer.launch({
-  headless: true,
-  args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  ...(isProduction && { executablePath: process.env.CHROMIUM_PATH }),
-});
-
 app.post("/", async (req, res) => {
   const { username, password } = req.body;
+
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    ...(isProduction && { executablePath: process.env.CHROMIUM_PATH }),
+  });
 
   const page = await browser.newPage();
   await page.goto("https://www.ta-retirement.com/");
