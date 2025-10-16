@@ -1,0 +1,16 @@
+{
+  "name": "transamerica-report-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0",
+    "puppeteer": "^24.25.0"
+  }
+}
