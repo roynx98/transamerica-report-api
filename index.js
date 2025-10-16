@@ -8,16 +8,20 @@ const isProduction = environment === "production";
 
 app.use(bodyParser.json());
 
-app.get('/', (req, res) => {
-  res.send('transamerica-report-api running');
+app.get("/", (req, res) => {
+  res.send("transamerica-report-api running");
 });
 
-app.post("/", async (req, res) => {
+app.post("/get-report", async (req, res) => {
   const { username, password } = req.body;
 
   const browser = await puppeteer.launch({
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+    ],
     ...(isProduction && { executablePath: process.env.CHROMIUM_PATH }),
   });
 
