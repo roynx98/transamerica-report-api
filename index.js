@@ -8,6 +8,10 @@ const isProduction = environment === "production";
 
 app.use(bodyParser.json());
 
+app.get('/', (req, res) => {
+  res.send('transamerica-report-api running');
+});
+
 app.post("/", async (req, res) => {
   const { username, password } = req.body;
 
