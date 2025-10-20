@@ -14,7 +14,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/get-report", async (req, res) => {
-  const { username, password, starDate, endDate } = req.body;
+  const { username, password, startDate, endDate } = req.body;
 
   const browser = await puppeteer.launch({
     headless: true,
@@ -27,6 +27,12 @@ app.post("/get-report", async (req, res) => {
   });
 
   const page = await browser.newPage();
+
+  const client = await page.createCDPSession();
+  await client.send('Page.setDownloadBehavior', {
+    behavior: 'allow',
+    downloadPath: './reports'
+  });
 
   const cookies = JSON.parse(fs.readFileSync("./cookies.json", "utf8"));
   await browser.setCookie(...cookies);
@@ -42,16 +48,16 @@ app.post("/get-report", async (req, res) => {
   );
 
   const startDateInput = await page.$('#ucPlanReports_txtDateStart')
-  startDateInput.evaluate((el) => el.value = starDate);
+  startDateInput.evaluate((el, v) => { el.value = v }, startDate);
 
   const endDateInput = await page.$('#ucPlanReports_txtDateEnd')
-  endDateInput.evaluate((el) => el.value = endDate);
+  endDateInput.evaluate((el, v) => { el.value = v }, endDate);
 
   await page.locator('label[for="ucPlanReports_rblParticipants2_0"]').click();
 
   await page.locator("#ucPlanReports_btnSubmit").click()
 
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  await new Promise((resolve) => setTimeout(resolve, 15000));
 
   await browser.close();
   res.send("Succed");
