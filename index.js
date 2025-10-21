@@ -93,7 +93,9 @@ app.post("/get-report", async (req, res) => {
     await browser.close();
     console.error("Error generating report:", err);
     return res.status(500).send("Error generating report");
-  }
+  } 
+
+  await browser.close();
 
   try {
     const reportsDir = "./reports";
