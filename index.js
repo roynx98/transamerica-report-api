@@ -40,10 +40,24 @@ app.post("/get-report", async (req, res) => {
 
     await page.goto("https://www.ta-retirement.com/");
     await page.setViewport({ width: 1080, height: 1024 });
-    await page.locator('input[name="txtUsername"]').fill(username);
-    await page.locator('input[name="txtPassword"]').fill(password);
-    await page.locator(".submitButton").click();
-    await page.locator("#m10_5").wait();
+
+    let isLoggedIn = false;
+    const profileIconHandle = await page.$("#UcNavGlobal_profileIconCircleDark");
+    if (profileIconHandle) {
+      const visible = await page.evaluate((el) => {
+        const style = window.getComputedStyle(el);
+        return style.display !== "none" && style.visibility !== "hidden" && el.offsetParent !== null;
+      }, profileIconHandle);
+      isLoggedIn = Boolean(visible);
+    }
+
+    if (!isLoggedIn) {
+      await page.locator('input[name="txtUsername"]').fill(username);
+      await page.locator('input[name="txtPassword"]').fill(password);
+      await page.locator(".submitButton").click();
+      await page.locator("#m10_5").wait();
+    }
+
     await page.goto(
       "https://www.ta-retirement.com/SIP/Employer/PlanReports/Contribution/ps_ContributionRateChange.aspx?UserType=S"
     );
