@@ -38,6 +38,7 @@ app.post("/get-report", async (req, res) => {
     const cookies = JSON.parse(fs.readFileSync("./cookies.json", "utf8"));
     await browser.setCookie(...cookies);
 
+    console.log('1')
     await page.goto("https://www.ta-retirement.com/");
     await page.setViewport({ width: 1080, height: 1024 });
 
@@ -52,28 +53,37 @@ app.post("/get-report", async (req, res) => {
     }
 
     if (!isLoggedIn) {
+      console.log('2')
       await page.locator('input[name="txtUsername"]').fill(username);
+      console.log('3')
       await page.locator('input[name="txtPassword"]').fill(password);
+      console.log('4')
       await page.locator(".submitButton").click();
+      console.log('5')
       await page.locator("#m10_5").wait();
     }
 
+    console.log('6')
     await page.goto(
       "https://www.ta-retirement.com/SIP/Employer/PlanReports/Contribution/ps_ContributionRateChange.aspx?UserType=S"
     );
 
     const startDateInput = await page.$("#ucPlanReports_txtDateStart");
+    console.log('7')
     startDateInput.evaluate((el, v) => {
       el.value = v;
     }, startDate);
 
     const endDateInput = await page.$("#ucPlanReports_txtDateEnd");
+    console.log('8')
     endDateInput.evaluate((el, v) => {
       el.value = v;
     }, endDate);
 
+    console.log('9')
     await page.locator('label[for="ucPlanReports_rblParticipants2_0"]').click();
 
+    console.log('10')
     await page.locator("#ucPlanReports_btnSubmit").click();
 
     await new Promise((resolve) => setTimeout(resolve, 15000));
