@@ -15,17 +15,17 @@ app.get("/", (req, res) => {
 
 app.post("/get-report", async (req, res) => {
   const { username, password, startDate, endDate, cookies } = req.body;
-   const browser = await puppeteer.launch({
+  const browser = await puppeteer.launch({
     headless: false,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-dev-shm-usage",
-      "--user-data-dir=./userData"
+      "--user-data-dir=./userData",
     ],
     ...(isProduction && { executablePath: process.env.CHROMIUM_PATH }),
   });
- 
+
   try {
     const page = await browser.newPage();
 
@@ -43,11 +43,17 @@ app.post("/get-report", async (req, res) => {
     await page.setViewport({ width: 1080, height: 1024 });
 
     let isLoggedIn = false;
-    const profileIconHandle = await page.$("#UcNavGlobal_profileIconCircleDark");
+    const profileIconHandle = await page.$(
+      "#UcNavGlobal_profileIconCircleDark"
+    );
     if (profileIconHandle) {
       const visible = await page.evaluate((el) => {
         const style = window.getComputedStyle(el);
-        return style.display !== "none" && style.visibility !== "hidden" && el.offsetParent !== null;
+        return (
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          el.offsetParent !== null
+        );
       }, profileIconHandle);
       isLoggedIn = Boolean(visible);
     }
@@ -84,7 +90,7 @@ app.post("/get-report", async (req, res) => {
     await browser.close();
     console.error("Error generating report:", err);
     return res.status(500).send("Error generating report");
-  } 
+  }
 
   await browser.close();
 
@@ -107,6 +113,57 @@ app.post("/get-report", async (req, res) => {
     console.error("Error processing report file:", err);
     return res.status(500).send("Error processing report");
   }
+});
+
+app.post("/pro", async (req, res) => {
+  const { username, password, cookies } = req.body;
+  const browser = await puppeteer.launch({
+    headless: false,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--user-data-dir=./userData",
+    ],
+    ...(isProduction && { executablePath: process.env.CHROMIUM_PATH }),
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.goto("https://guhroo.prosoftware.com/");
+    await page.setViewport({ width: 1080, height: 1024 });
+
+    await page.locator("#txtErUsername").fill(username);
+    await page.locator("#txtErPassword").fill(password);
+
+    await page.locator(".form-group .btn-primary").click();
+
+    await page.waitForSelector("#spanQuestion");
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const question = await page.$eval("#spanQuestion", (el) => el.value);
+    let response = "";
+    if (question.includes("primary school")) {
+      response = "Colegio Fresnillo";
+    } else if (question.includes("first pet")) {
+      response = "Lucky";
+    } else {
+      response = "CDMX";
+    }
+    await page.locator("#txtAnswer").fill(response);
+
+    await page.locator(".form-group .btn-primary").click();
+    await new Promise((resolve) => setTimeout(resolve, 8000));
+
+    await browser.close();
+  } catch (err) {
+    await browser.close();
+    console.log(err);
+    return res.status(500).send("Error going to prosoftware");
+  } finally {
+    await browser.close();
+  }
+
+  return res.send("Prosoftware login attempted");
 });
 
 app.listen(3001, () => {
