@@ -5,6 +5,8 @@ services:
     ports:
       - "3001:3001"
       - "9002:9002"
+    volumes:
+      - ./userData:/app/userData
     environment:
       - NODE_ENV=production
       - CHROMIUM_PATH=/usr/bin/chromium
