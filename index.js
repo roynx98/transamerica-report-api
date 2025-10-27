@@ -2,6 +2,7 @@ import puppeteer from "puppeteer";
 import express from "express";
 import bodyParser from "body-parser";
 import fs from "fs";
+import { evaluateActions } from "./evaluateActions.js";
 
 const app = express();
 const environment = process.env.NODE_ENV;
@@ -116,7 +117,7 @@ app.post("/get-report", async (req, res) => {
 });
 
 app.post("/pro", async (req, res) => {
-  const { username, password, targetFullName } = req.body;
+  const { username, password, targetFullName, changes } = req.body;
   const browser = await puppeteer.launch({
     headless: false,
     args: [
@@ -129,7 +130,7 @@ app.post("/pro", async (req, res) => {
   });
 
   try {
-    const page = await browser.newPage();
+    let page = await browser.newPage();
 
     await page.goto("https://guhroo.prosoftware.com/");
     await page.setViewport({ width: 1080, height: 1024 });
@@ -159,31 +160,29 @@ app.post("/pro", async (req, res) => {
 
     await page.waitForSelector("#tableUser_processing", { visible: true });
     await page.waitForSelector("#tableUser_processing", { hidden: true });
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     await page.locator(".input-sm").fill(targetFullName);
 
     await page.waitForSelector("#tableUser_processing", { visible: true });
     await page.waitForSelector("#tableUser_processing", { hidden: true });
     await page.locator(".link").click();
 
-    const newPage = await new Promise(resolve => browser.once('targetcreated', target => resolve(target.page())));
-    await newPage.setViewport({ width: 1080, height: 1024 });
-    await newPage.waitForSelector('.panel-heading');
+    page = await new Promise(resolve => browser.once('targetcreated', target => resolve(target.page())));
+    await page.setViewport({ width: 1080, height: 1024 });
+    await page.waitForSelector('.panel-heading');
 
-    await newPage.locator(".ViewDeductions").click();
+    await page.locator(".ViewDeductions").click();
 
-    await new Promise((resolve) => setTimeout(resolve, 4000));
+    await page.waitForNetworkIdle();
+    const actions = await page.evaluate(evaluateActions, changes);
 
     await browser.close();
+    return res.send(actions);
   } catch (err) {
     await browser.close();
     console.log(err);
     return res.status(500).send("Error going to prosoftware");
-  } finally {
-    await browser.close();
   }
-
-  return res.send("Prosoftware login attempted");
 });
 
 app.listen(3001, () => {
