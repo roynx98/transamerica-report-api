@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
 app.post("/get-report", async (req, res) => {
   const { username, password, startDate, endDate, cookies } = req.body;
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: true,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
