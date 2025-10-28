@@ -131,6 +131,9 @@ app.post("/pro", async (req, res) => {
 
   try {
     let page = await browser.newPage();
+    page.on('dialog', async dialog => {
+      await dialog.accept();
+    });
 
     await page.goto("https://guhroo.prosoftware.com/");
     await page.setViewport({ width: 1080, height: 1024 });
@@ -170,6 +173,9 @@ app.post("/pro", async (req, res) => {
     page = await new Promise((resolve) =>
       browser.once("targetcreated", (target) => resolve(target.page()))
     );
+    page.on('dialog', async dialog => {
+      await dialog.accept();
+    });
     await page.setViewport({ width: 1080, height: 1024 });
     await page.waitForSelector(".panel-heading");
 
@@ -181,7 +187,10 @@ app.post("/pro", async (req, res) => {
     await executeActions(page, actions);
 
     await browser.close();
-    return res.send(actions);
+    return res.send({
+      name: targetFullName,
+      actions,
+    });
   } catch (err) {
     await browser.close();
     console.log(err);
@@ -202,15 +211,23 @@ async function executeActions(page, actions) {
     await page.select('select[data-link="contribute"]', isRate ? "P" : "A");
 
     await page
-      .locator(isRate ? 'input[data-link="employeeportionrate"]' : 'input[data-link="employeeperpay"]')
+      .locator(
+        isRate
+          ? 'input[data-link="employeeportionrate"]'
+          : 'input[data-link="employeeperpay"]'
+      )
       .fill(contribution.toString());
 
     await page.evaluate((note) => {
-      const textarea = document.querySelector('textarea.form-control');
-      textarea.value += textarea.value ? '\n' + note : note;
+      const textarea = document.querySelector("textarea.form-control");
+      textarea.value += textarea.value ? "\n" + note : note;
     }, note);
 
-    // SAVE
+    await page.evaluate(() => {
+      pagenamespace.SaveData();
+    });
+
+    await page.waitForNetworkIdle();
   }
 }
 
