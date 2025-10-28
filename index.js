@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
 app.post("/get-report", async (req, res) => {
   const { username, password, startDate, endDate, cookies } = req.body;
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: isProduction,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -119,7 +119,7 @@ app.post("/get-report", async (req, res) => {
 app.post("/pro", async (req, res) => {
   const { username, password, targetFullName, changes } = req.body;
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: isProduction,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -167,14 +167,18 @@ app.post("/pro", async (req, res) => {
     await page.waitForSelector("#tableUser_processing", { hidden: true });
     await page.locator(".link").click();
 
-    page = await new Promise(resolve => browser.once('targetcreated', target => resolve(target.page())));
+    page = await new Promise((resolve) =>
+      browser.once("targetcreated", (target) => resolve(target.page()))
+    );
     await page.setViewport({ width: 1080, height: 1024 });
-    await page.waitForSelector('.panel-heading');
+    await page.waitForSelector(".panel-heading");
 
     await page.locator(".ViewDeductions").click();
 
     await page.waitForNetworkIdle();
     const actions = await page.evaluate(evaluateActions, changes);
+
+    await executeActions(page, actions);
 
     await browser.close();
     return res.send(actions);
@@ -184,6 +188,31 @@ app.post("/pro", async (req, res) => {
     return res.status(500).send("Error going to prosoftware");
   }
 });
+
+async function executeActions(page, actions) {
+  for (const action of actions) {
+    const { type, id, contribution, isRate, note } = action;
+    if (type === "create") {
+      // TODO Handle creation
+    }
+
+    await page.locator(`[id="${id}"]`).click();
+
+    await page.waitForNetworkIdle();
+    await page.select('select[data-link="contribute"]', isRate ? "P" : "A");
+
+    await page
+      .locator(isRate ? 'input[data-link="employeeportionrate"]' : 'input[data-link="employeeperpay"]')
+      .fill(contribution.toString());
+
+    await page.evaluate((note) => {
+      const textarea = document.querySelector('textarea.form-control');
+      textarea.value += textarea.value ? '\n' + note : note;
+    }, note);
+
+    // SAVE
+  }
+}
 
 app.listen(3001, () => {
   console.log("Running on http://localhost:3001");
